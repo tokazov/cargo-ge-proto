@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CARGO.GE — Биржа грузов Грузии</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+  /* HEADER */
+  .header {
+    background: #1a1a2e;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .logo { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: #f7b731; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .btn-login { background: transparent; color: #ccc; border: 1px solid #444; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .btn-register { background: #f7b731; color: #1a1a2e; border: none; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .lang-switch { color: #aaa; font-size: 12px; cursor: pointer; display: flex; gap: 6px; }
+  .lang-switch span { cursor: pointer; padding: 2px 4px; border-radius: 3px; }
+  .lang-switch .active { color: #f7b731; font-weight: 700; }
+
+  /* TABS */
+  .tabs {
+    background: #1a1a2e;
+    display: flex;
+    padding: 0 16px;
+    border-top: 1px solid #2a2a4a;
+  }
+  .tab {
+    padding: 10px 16px;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: #f7b731; border-bottom-color: #f7b731; font-weight: 600; }
+
+  /* STATS BAR */
+  .stats-bar {
+    background: #16213e;
+    padding: 8px 16px;
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: #aaa;
+  }
+  .stat { display: flex; align-items: center; gap: 5px; }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: #2ecc71; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .stat strong { color: #fff; }
+
+  /* FILTERS */
+  .filters {
+    background: #fff;
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #e8e8e8;
+    position: sticky;
+    top: 52px;
+    z-index: 99;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  .filter-select {
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #333;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-select:focus { border-color: #f7b731; }
+  .filter-btn {
+    background: #1a1a2e;
+    color: #fff;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .filter-count {
+    background: #f7b731;
+    color: #1a1a2e;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+
+  /* TABLE HEADER */
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1fr 80px;
+    padding: 8px 16px;
+    background: #e8eaf0;
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #d0d4df;
+  }
+
+  /* CARGO LIST */
+  .cargo-list { padding: 0; }
+
+  .cargo-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 1.2fr 1fr 1fr 80px;
+    padding: 11px 16px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background 0.15s;
+    align-items: center;
+  }
+  .cargo-row:hover { background: #fffbf0; }
+  .cargo-row.urgent { border-left: 3px solid #e74c3c; }
+  .cargo-row.new { border-left: 3px solid #2ecc71; }
+
+  .route { font-weight: 600; font-size: 14px; color: #1a1a2e; }
+  .route .arrow { color: #f7b731; margin: 0 4px; }
+  .company { font-size: 11px; color: #888; margin-top: 2px; }
+  .rating { font-size: 11px; color: #f7b731; }
+
+  .weight { font-size: 13px; color: #333; }
+  .cargo-type {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: #f0f2f5;
+    color: #555;
+    display: inline-block;
+    font-weight: 500;
+  }
+  .cargo-type.ref { background: #e3f2fd; color: #1565c0; }
+  .cargo-type.tent { background: #f3e5f5; color: #6a1b9a; }
+  .cargo-type.bort { background: #e8f5e9; color: #2e7d32; }
+  .cargo-type.termos { background: #fff3e0; color: #e65100; }
+
+  .price { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+  .price-note { font-size: 10px; color: #aaa; }
+
+  .date-cell { font-size: 12px; color: #555; }
+  .date-today { color: #2ecc71; font-weight: 600; }
+  .date-tomorrow { color: #f7b731; font-weight: 600; }
+
+  .badge-new {
+    font-size: 10px;
+    background: #2ecc71;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .badge-urgent {
+    font-size: 10px;
+    background: #e74c3c;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+
+  .btn-respond {
+    background: #f7b731;
+    color: #1a1a2e;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .btn-respond:hover { transform: scale(1.05); }
+
+  /* LOAD MORE */
+  .load-more {
+    text-align: center;
+    padding: 16px;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+  }
+  .load-more button {
+    background: #f0f2f5;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff;
+    width: 100%;
+    max-width: 600px;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .modal-subtitle { font-size: 13px; color: #888; margin-bottom: 16px; }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .modal-field label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+  .modal-field value { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+  .modal-divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
+  .modal-company { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; margin-bottom: 16px; }
+  .company-avatar { width: 40px; height: 40px; background: #1a1a2e; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #f7b731; font-weight: 800; font-size: 16px; }
+  .company-info .name { font-weight: 700; font-size: 14px; }
+  .company-info .stats { font-size: 12px; color: #888; margin-top: 2px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .btn-modal-respond { flex: 1; background: #f7b731; color: #1a1a2e; border: none; padding: 14px; border-radius: 10px; font-size: 15px; font-weight: 800; cursor: pointer; }
+  .btn-modal-call { background: #f0f2f5; color: #333; border: none; padding: 14px; border-radius: 10px; font-size: 15px; cursor: pointer; width: 52px; }
+  .close-modal { position: absolute; top: 16px; right: 16px; background: #f0f2f5; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    .table-header { display: none; }
+    .cargo-row {
+      display: block;
+      padding: 12px 16px;
+    }
+    .mobile-row-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    .mobile-row-sub {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-respond { display: none; }
+    .desktop-only { display: none; }
+    .filter-select { font-size: 12px; padding: 6px 8px; }
+  }
+
+  /* BOTTOM NAV (mobile) */
+  .bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #1a1a2e;
+    padding: 8px 0;
+    z-index: 100;
+  }
+  @media (max-width: 640px) {
+    .bottom-nav { display: flex; }
+    .cargo-list { padding-bottom: 60px; }
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: #666;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .nav-item.active { color: #f7b731; }
+  .nav-icon { font-size: 20px; }
+
+  /* ADD CARGO FAB */
+  .fab {
+    position: fixed;
+    bottom: 70px;
+    right: 16px;
+    background: #f7b731;
+    color: #1a1a2e;
+    border: none;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(247,183,49,0.5);
+    z-index: 99;
+    display: none;
+  }
+  @media (max-width: 640px) { .fab { display: flex; align-items: center; justify-content: center; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">CARGO<span>.GE</span></div>
+  <div class="header-right">
+    <div class="lang-switch">
+      <span class="active">RU</span>
+      <span>GE</span>
+      <span>EN</span>
+    </div>
+    <button class="btn-login">Войти</button>
+    <button class="btn-register">Регистрация</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active">📦 Грузы</div>
+  <div class="tab">🚛 Транспорт</div>
+  <div class="tab">🗺️ Маршруты</div>
+  <div class="tab">📊 Ставки</div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat"><div class="stat-dot"></div><strong>284</strong> грузов сегодня</div>
+  <div class="stat"><strong>1,047</strong> машин онлайн</div>
+  <div class="stat"><strong>3,812</strong> компаний</div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <select class="filter-select">
+    <option>📍 Откуда</option>
+    <option>Тбилиси</option>
+    <option>Батуми</option>
+    <option>Поти</option>
+    <option>Кутаиси</option>
+    <option>Рустави</option>
+  </select>
+  <select class="filter-select">
+    <option>🏁 Куда</option>
+    <option>Тбилиси</option>
+    <option>Батуми</option>
+    <option>Поти</option>
+    <option>Ереван</option>
+    <option>Стамбул</option>
+    <option>Москва</option>
+  </select>
+  <select class="filter-select">
+    <option>📅 Дата</option>
+    <option>Сегодня</option>
+    <option>Завтра</option>
+    <option>На неделе</option>
+  </select>
+  <select class="filter-select">
+    <option>🚛 Кузов</option>
+    <option>Тент</option>
+    <option>Рефрижератор</option>
+    <option>Бортовой</option>
+    <option>Термос</option>
+    <option>Газель</option>
+  </select>
+  <button class="filter-btn">Найти</button>
+  <div class="filter-count">284 груза</div>
+</div>
+
+<!-- TABLE HEADER (desktop) -->
+<div class="table-header">
+  <div>ОТКУДА → КУДА</div>
+  <div>КОМПАНИЯ</div>
+  <div>ВЕС</div>
+  <div>КУЗОВ</div>
+  <div>ЦЕНА</div>
+  <div>ДАТА</div>
+  <div></div>
+</div>
+
+<!-- CARGO LIST -->
+<div class="cargo-list" id="cargoList">
+
+  <!-- ROW 1 -->
+  <div class="cargo-row new" onclick="openModal(1)">
+    <div>
+      <div class="route">Тбилиси <span class="arrow">→</span> Батуми</div>
+      <div class="company">Экспресс-Груз ⭐ 4.9</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">ООО Экспресс-Груз</div>
+      <div class="rating">★★★★★ 4.9 · 142 рейса</div>
+    </div>
+    <div class="weight desktop-only">5 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type tent">Тент</span></div>
+    <div>
+      <div class="price">$280</div>
+      <div class="price-note desktop-only">за рейс</div>
+    </div>
+    <div>
+      <div class="date-cell date-today">Сегодня</div>
+      <div><span class="badge-new">NEW</span></div>
+    </div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+    <!-- MOBILE -->
+    <div class="mobile-row-sub" style="display:none" class="mobile-only">
+      <span class="cargo-type tent">Тент</span>
+      <span style="font-size:12px;color:#888;">5т</span>
+      <span class="badge-new">NEW</span>
+    </div>
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="cargo-row" onclick="openModal(2)">
+    <div>
+      <div class="route">Поти <span class="arrow">→</span> Тбилиси</div>
+      <div class="company">АгроТранс ⭐ 5.0</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">АгроТранс Груп</div>
+      <div class="rating">★★★★★ 5.0 · 89 рейсов</div>
+    </div>
+    <div class="weight desktop-only">12 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type ref">Рефриж.</span></div>
+    <div>
+      <div class="price">$450</div>
+    </div>
+    <div><div class="date-cell date-tomorrow">Завтра</div></div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 3 -->
+  <div class="cargo-row urgent" onclick="openModal(3)">
+    <div>
+      <div class="route">Тбилиси <span class="arrow">→</span> Ереван</div>
+      <div class="company">CargoLine ⭐ 4.7</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">CargoLine GE</div>
+      <div class="rating">★★★★☆ 4.7 · 203 рейса</div>
+    </div>
+    <div class="weight desktop-only">20 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type tent">Тент</span></div>
+    <div>
+      <div class="price">$890</div>
+    </div>
+    <div>
+      <div class="date-cell date-today">Сегодня</div>
+      <div><span class="badge-urgent">СРОЧНО</span></div>
+    </div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 4 -->
+  <div class="cargo-row" onclick="openModal(4)">
+    <div>
+      <div class="route">Кутаиси <span class="arrow">→</span> Тбилиси</div>
+      <div class="company">ГрузМастер ⭐ 4.6</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">ГрузМастер</div>
+      <div class="rating">★★★★☆ 4.6 · 67 рейсов</div>
+    </div>
+    <div class="weight desktop-only">3 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type bort">Борт</span></div>
+    <div>
+      <div class="price">$180</div>
+    </div>
+    <div><div class="date-cell date-today">Сегодня</div></div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 5 -->
+  <div class="cargo-row" onclick="openModal(5)">
+    <div>
+      <div class="route">Батуми <span class="arrow">→</span> Тбилиси</div>
+      <div class="company">ФастДелив ⭐ 4.8</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">ФастДелив</div>
+      <div class="rating">★★★★★ 4.8 · 311 рейсов</div>
+    </div>
+    <div class="weight desktop-only">800 кг</div>
+    <div class="desktop-only"><span class="cargo-type" style="background:#fce4ec;color:#880e4f;">Газель</span></div>
+    <div>
+      <div class="price">$120</div>
+    </div>
+    <div>
+      <div class="date-cell date-today">Сегодня</div>
+      <div><span class="badge-new">NEW</span></div>
+    </div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 6 -->
+  <div class="cargo-row" onclick="openModal(6)">
+    <div>
+      <div class="route">Тбилиси <span class="arrow">→</span> Стамбул</div>
+      <div class="company">ЕвроТранс ⭐ 4.9</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">ЕвроТранс</div>
+      <div class="rating">★★★★★ 4.9 · 528 рейсов</div>
+    </div>
+    <div class="weight desktop-only">15 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type ref">Рефриж.</span></div>
+    <div>
+      <div class="price">$1 200</div>
+    </div>
+    <div><div class="date-cell">29 мар</div></div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 7 -->
+  <div class="cargo-row" onclick="openModal(7)">
+    <div>
+      <div class="route">Рустави <span class="arrow">→</span> Поти</div>
+      <div class="company">РустГруз ⭐ 4.5</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">РустГруз</div>
+      <div class="rating">★★★★☆ 4.5 · 44 рейса</div>
+    </div>
+    <div class="weight desktop-only">8 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type termos">Термос</span></div>
+    <div>
+      <div class="price">$340</div>
+    </div>
+    <div><div class="date-cell date-tomorrow">Завтра</div></div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 8 -->
+  <div class="cargo-row urgent" onclick="openModal(8)">
+    <div>
+      <div class="route">Поти <span class="arrow">→</span> Ереван</div>
+      <div class="company">КавказЛог ⭐ 4.8</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">КавказЛогистик</div>
+      <div class="rating">★★★★★ 4.8 · 187 рейсов</div>
+    </div>
+    <div class="weight desktop-only">18 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type tent">Тент</span></div>
+    <div>
+      <div class="price">$750</div>
+    </div>
+    <div>
+      <div class="date-cell date-today">Сегодня</div>
+      <div><span class="badge-urgent">СРОЧНО</span></div>
+    </div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 9 -->
+  <div class="cargo-row new" onclick="openModal(9)">
+    <div>
+      <div class="route">Тбилиси <span class="arrow">→</span> Баку</div>
+      <div class="company">АзерЭкспресс ⭐ 4.7</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">АзерЭкспресс</div>
+      <div class="rating">★★★★☆ 4.7 · 93 рейса</div>
+    </div>
+    <div class="weight desktop-only">10 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type bort">Борт</span></div>
+    <div>
+      <div class="price">$520</div>
+    </div>
+    <div>
+      <div class="date-cell">30 мар</div>
+      <div><span class="badge-new">NEW</span></div>
+    </div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- ROW 10 -->
+  <div class="cargo-row" onclick="openModal(10)">
+    <div>
+      <div class="route">Батуми <span class="arrow">→</span> Стамбул</div>
+      <div class="company">ТурГрузTR ⭐ 4.6</div>
+    </div>
+    <div class="desktop-only">
+      <div style="font-size:13px;font-weight:600;">ТурГруз TR</div>
+      <div class="rating">★★★★☆ 4.6 · 231 рейс</div>
+    </div>
+    <div class="weight desktop-only">22 000 кг</div>
+    <div class="desktop-only"><span class="cargo-type tent">Тент</span></div>
+    <div>
+      <div class="price">$1 450</div>
+    </div>
+    <div><div class="date-cell">31 мар</div></div>
+    <div class="desktop-only"><button class="btn-respond">Откликнуться</button></div>
+  </div>
+
+  <!-- LOAD MORE -->
+  <div class="load-more">
+    <button>Загрузить ещё 274 груза ↓</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+
+    <div style="position:relative">
+      <button class="close-modal" onclick="closeModalBtn()">✕</button>
+      <div class="modal-title" id="modalTitle">Тбилиси → Батуми</div>
+      <div class="modal-subtitle" id="modalSubtitle">Груз #TBL-28847 · Добавлен 10 минут назад</div>
+    </div>
+
+    <div class="modal-company">
+      <div class="company-avatar" id="modalAvatar">ЭГ</div>
+      <div class="company-info">
+        <div class="name" id="modalCompany">ООО Экспресс-Груз</div>
+        <div class="stats" id="modalStats">★★★★★ 4.9 · 142 рейса · на бирже с 2021</div>
+      </div>
+    </div>
+
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label>Откуда</label>
+        <value id="mFrom">Тбилиси, склад Дидубе</value>
+      </div>
+      <div class="modal-field">
+        <label>Куда</label>
+        <value id="mTo">Батуми, порт</value>
+      </div>
+      <div class="modal-field">
+        <label>Дата загрузки</label>
+        <value id="mDate" style="color:#2ecc71">Сегодня, 14:00</value>
+      </div>
+      <div class="modal-field">
+        <label>Вес груза</label>
+        <value id="mWeight">5 000 кг</value>
+      </div>
+      <div class="modal-field">
+        <label>Тип кузова</label>
+        <value id="mType">Тент, 82м³</value>
+      </div>
+      <div class="modal-field">
+        <label>Оплата</label>
+        <value id="mPayment">Нал, сразу</value>
+      </div>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Описание груза</div>
+      <div id="mDesc" style="font-size:13px;color:#333;line-height:1.5">Стройматериалы (плитка). Паллеты 12шт. Бережная перевозка. Без лишних остановок. Документы готовы.</div>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px">Ставка</div>
+        <div id="mPrice" style="font-size:26px;font-weight:900;color:#1a1a2e">$280</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:#888">Расстояние</div>
+        <div style="font-size:15px;font-weight:700">~312 км</div>
+        <div style="font-size:11px;color:#aaa">$0.90/км</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-respond" onclick="alert('✅ Заявка отправлена! Заказчик получит уведомление.')">Откликнуться на груз</button>
+      <button class="btn-modal-call" onclick="alert('📞 +995 555 123 456')">📞</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="alert('➕ Добавить груз — форма в разработке')">+</button>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">📦</div>
+    <div>Грузы</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">🚛</div>
+    <div>Машины</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">📋</div>
+    <div>Мои заказы</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">💬</div>
+    <div>Чат</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">👤</div>
+    <div>Профиль</div>
+  </div>
+</div>
+
+<script>
+const modalData = {
+  1: { title:"Тбилиси → Батуми", sub:"Груз #TBL-28847 · Добавлен 10 мин назад", avatar:"ЭГ", company:"ООО Экспресс-Груз", stats:"★★★★★ 4.9 · 142 рейса · на бирже с 2021", from:"Тбилиси, склад Дидубе", to:"Батуми, порт", date:"Сегодня, 14:00", weight:"5 000 кг", type:"Тент, 82м³", payment:"Нал, сразу", desc:"Стройматериалы (плитка). Паллеты 12шт. Бережная перевозка. Документы готовы.", price:"$280", km:"~312 км", perkm:"$0.90/км" },
+  2: { title:"Поти → Тбилиси", sub:"Груз #PTI-19203 · Добавлен 45 мин назад", avatar:"АТ", company:"АгроТранс Груп", stats:"★★★★★ 5.0 · 89 рейсов · на бирже с 2022", from:"Поти, терминал А", to:"Тбилиси, рынок Элиава", date:"Завтра, 08:00", weight:"12 000 кг", type:"Рефрижератор", payment:"Безнал, 3 дня", desc:"Замороженные продукты. Температурный режим -18°С. Строго вовремя. Сертификаты есть.", price:"$450", km:"~380 км", perkm:"$1.18/км" },
+  3: { title:"Тбилиси → Ереван", sub:"Груз #TBL-28901 · СРОЧНО · Добавлен 5 мин назад", avatar:"CL", company:"CargoLine GE", stats:"★★★★☆ 4.7 · 203 рейса · на бирже с 2020", from:"Тбилиси, Авлабари", to:"Ереван, склад Норк", date:"СЕГОДНЯ до 18:00", weight:"20 000 кг", type:"Тент, 120м³", payment:"Нал на месте", desc:"Промышленное оборудование. Требуется осторожность. Крепление заказчика. Таможня оформлена.", price:"$890", km:"~280 км", perkm:"$3.18/км" },
+  4: { title:"Кутаиси → Тбилиси", sub:"Груз #KUT-11045 · Добавлен 2 ч назад", avatar:"ГМ", company:"ГрузМастер", stats:"★★★★☆ 4.6 · 67 рейсов · на бирже с 2023", from:"Кутаиси, ул. Церетели", to:"Тбилиси, Глдани", date:"Сегодня, 16:00", weight:"3 000 кг", type:"Бортовой", payment:"Нал", desc:"Мебель разобранная. Паллеты 6шт. Аккуратно. Без навала.", price:"$180", km:"~230 км", perkm:"$0.78/км" },
+  5: { title:"Батуми → Тбилиси", sub:"Груз #BAT-33211 · Добавлен 3 мин назад", avatar:"ФД", company:"ФастДелив", stats:"★★★★★ 4.8 · 311 рейсов · на бирже с 2021", from:"Батуми, гостиница Шератон", to:"Тбилиси, пр. Руставели", date:"Сегодня, 15:30", weight:"800 кг", type:"Газель, до 10м³", payment:"Нал", desc:"Личные вещи. 12 коробок + 2 чемодана. Хрупкое. Адрес уточнить при контакте.", price:"$120", km:"~312 км", perkm:"$0.38/км" },
+  6: { title:"Тбилиси → Стамбул", sub:"Груз #TBL-28755 · Добавлен 1 ч назад", avatar:"ЕТ", company:"ЕвроТранс", stats:"★★★★★ 4.9 · 528 рейсов · на бирже с 2019", from:"Тбилиси, склад Ортачала", to:"Стамбул, Халкалы терминал", date:"29 марта, 06:00", weight:"15 000 кг", type:"Рефрижератор, t+4°C", payment:"Безнал, предоплата 50%", desc:"Свежие цитрусовые. Экспортный груз. CMR, фитосертификат готовы. Опытный перевозчик.", price:"$1 200", km:"~1 100 км", perkm:"$1.09/км" },
+  7: { title:"Рустави → Поти", sub:"Груз #RST-09821 · Добавлен 3 ч назад", avatar:"РГ", company:"РустГруз", stats:"★★★★☆ 4.5 · 44 рейса · на бирже с 2023", from:"Рустави, з-д Азот", to:"Поти, морской порт", date:"Завтра, 10:00", weight:"8 000 кг", type:"Термос", payment:"Безнал", desc:"Химическое сырьё. Все разрешения есть. Перевозчик должен иметь ДОПОГ.", price:"$340", km:"~395 км", perkm:"$0.86/км" },
+  8: { title:"Поти → Ереван", sub:"Груз #PTI-19188 · СРОЧНО · Добавлен 15 мин назад", avatar:"КЛ", company:"КавказЛогистик", stats:"★★★★★ 4.8 · 187 рейсов · на бирже с 2020", from:"Поти, контейнерный терминал", to:"Ереван, ТЛЦ Нубарашен", date:"СЕГОДНЯ, выезд до 16:00", weight:"18 000 кг", type:"Тент 120м³", payment:"Нал при разгрузке", desc:"Импортный товар после растаможки. Документы готовы. Срочно — склад не держит.", price:"$750", km:"~580 км", perkm:"$1.29/км" },
+  9: { title:"Тбилиси → Баку", sub:"Груз #TBL-28899 · Добавлен 7 мин назад", avatar:"АЭ", company:"АзерЭкспресс", stats:"★★★★☆ 4.7 · 93 рейса · на бирже с 2022", from:"Тбилиси, Isani район", to:"Баку, Бинагади терминал", date:"30 марта, 09:00", weight:"10 000 кг", type:"Бортовой", payment:"Безнал", desc:"Строительные материалы. Паллеты 20шт. Таможня азербайджанская на грузоотправителе.", price:"$520", km:"~500 км", perkm:"$1.04/км" },
+  10: { title:"Батуми → Стамбул", sub:"Груз #BAT-33198 · Добавлен 2 ч назад", avatar:"ТТ", company:"ТурГруз TR", stats:"★★★★☆ 4.6 · 231 рейс · на бирже с 2020", from:"Батуми, порт Батуми", to:"Стамбул, Амбарлы порт", date:"31 марта, 07:00", weight:"22 000 кг", type:"Тент 120м³", payment:"Безнал 5 дней", desc:"Паромная переправа Батуми-Стамбул. Груз: промтовары. CMR готово. Нужен перевозчик с опытом паром.", price:"$1 450", km:"~1 400 км (включая паром)", perkm:"$1.04/км" },
+};
+
+function openModal(id) {
+  const d = modalData[id];
+  if (!d) return;
+  document.getElementById('modalTitle').textContent = d.title;
+  document.getElementById('modalSubtitle').textContent = d.sub;
+  document.getElementById('modalAvatar').textContent = d.avatar;
+  document.getElementById('modalCompany').textContent = d.company;
+  document.getElementById('modalStats').textContent = d.stats;
+  document.getElementById('mFrom').textContent = d.from;
+  document.getElementById('mTo').textContent = d.to;
+  document.getElementById('mDate').textContent = d.date;
+  document.getElementById('mWeight').textContent = d.weight;
+  document.getElementById('mType').textContent = d.type;
+  document.getElementById('mPayment').textContent = d.payment;
+  document.getElementById('mDesc').textContent = d.desc;
+  document.getElementById('mPrice').textContent = d.price;
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('active');
+  }
+}
+function closeModalBtn() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
